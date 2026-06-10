@@ -5,26 +5,31 @@ from bs4 import BeautifulSoup
 WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 headers = {"User-Agent": "Mozilla/5.0"}
 
-# ================= INPUT =================
-btc_invest_vnd = 100_000_000
-
-btc_buy_usd = 63200
-vnd_rate = 25000
-
-gold_qty = 20
-gold_buy_per_chi = 17_300_000
-
 # ================= BTC =================
 btc_usd = requests.get(
     "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
     timeout=10
 ).json()["bitcoin"]["usd"]
 
-# số BTC bạn đã mua
-btc_amount = btc_invest_vnd / (btc_buy_usd * vnd_rate)
+# 🔥 FIX CHUẨN: lấy tỷ giá USD/VND thật từ API
+usd_vnd = requests.get(
+    "https://open.er-api.com/v6/latest/USD",
+    timeout=10
+).json()["rates"]["VND"]
 
-# giá trị hiện tại
-btc_value_now = btc_amount * btc_usd * vnd_rate
+btc_vnd = btc_usd * usd_vnd
+
+# ================= INPUT =================
+btc_buy_usd = 63200
+btc_invest_vnd = 100_000_000
+
+gold_qty = 20
+gold_buy_per_chi = 17_300_000
+
+# ================= BTC P/L =================
+btc_amount = btc_invest_vnd / (btc_buy_usd * usd_vnd)
+
+btc_value_now = btc_amount * btc_usd * usd_vnd
 
 btc_profit_vnd = btc_value_now - btc_invest_vnd
 btc_profit_pct = (btc_profit_vnd / btc_invest_vnd) * 100
@@ -55,7 +60,7 @@ else:
 
 # ================= OUTPUT =================
 message = f"""BTC: {btc_usd:,.0f} USD
-BTC: {btc_value_now:,.0f} VND
+BTC: {btc_vnd:,.0f} VND
 BTC P/L: {btc_profit_pct:+.2f}% ({btc_profit_vnd:+,.0f} VND)
 
 Nhẫn vàng trơn 1 chỉ: {gold_price if gold_price else 'N/A'} VND
