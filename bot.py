@@ -72,7 +72,7 @@ BTC P/L: {btc_profit_pct:+.2f}% ({btc_profit_vnd:+,.0f} VND)
 Nhẫn vàng trơn 1 chỉ: {gold_price if gold_price else 'N/A'} VND
 GOLD P/L: {gold_profit_pct:+.2f}% ({gold_profit_vnd:+,.0f} VND)
 
-TOTAL P/L: {total_profit_pct:+.2f}% ({total_profit_vnd:+,.0f} VND)
+Tổng cộng P/L hiện tại: {total_profit_pct:+.2f}% ({total_profit_vnd:+,.0f} VND)
 """
 
 requests.post(
