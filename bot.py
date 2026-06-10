@@ -8,57 +8,58 @@ WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 btc_api = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
 btc_usd = requests.get(btc_api).json()["bitcoin"]["usd"]
 
-# ================= USD -> VND (Remitano scrape) =================
-url = "https://remitano.com/vn"
+# ================= VND RATE (stable fallback) =================
+# dùng rate cố định ổn định (tránh scrape lỗi Remitano)
+vnd_rate = 25000
+btc_vnd = btc_usd * vnd_rate
+
+# ================= GOLD =================
+gold_url = "https://ngoctham.com/bang-gia-vang/"
 headers = {"User-Agent": "Mozilla/5.0"}
 
-res = requests.get(url, headers=headers, timeout=10)
+res = requests.get(gold_url, headers=headers, timeout=10)
 soup = BeautifulSoup(res.text, "html.parser")
 
-text = soup.get_text(" ")
-vnd_rate = None
+rows = soup.select("table tr")
 
-# fallback scan rate (approx logic)
-for word in text.split():
-    if "VND" in word:
-        try:
-            # lấy số gần nhất (fallback đơn giản)
-            num = float(''.join(c for c in word if c.isdigit() or c == '.'))
-            if 20000 < num < 30000:
-                vnd_rate = num
-                break
-        except:
-            pass
+gold_price = None
 
-# nếu fail → fallback cứng
-if not vnd_rate:
-    vnd_rate = 25000  # safe fallback
+for row in rows:
+    cols = row.find_all("td")
+    if len(cols) >= 3:
+        name = cols[0].get_text(strip=True)
+        price = cols[2].get_text(strip=True)
 
-btc_vnd = btc_usd * vnd_rate
+        if "Nhẫn 999.9" in name:
+            gold_price = price
+            break
 
 # ================= DISCORD EMBED =================
 embed = {
-    "title": "📊 CRYPTO DASHBOARD",
-    "color": 0x2ecc71,
+    "title": "📊 MARKET DASHBOARD",
+    "color": 0x3498db,
     "fields": [
         {
-            "name": "💰 BTC (USD)",
+            "name": "₿ BTC (USD)",
             "value": f"${btc_usd:,.2f}",
             "inline": True
         },
         {
-            "name": "🇻🇳 BTC (VND)",
+            "name": "₿ BTC (VND)",
             "value": f"{btc_vnd:,.0f} VND",
             "inline": True
         },
         {
-            "name": "💱 Rate",
-            "value": f"1 USD ≈ {vnd_rate} VND",
+            "name": "🥇 Gold (Nhẫn 999.9)",
+            "value": gold_price or "N/A",
             "inline": False
         }
     ]
 }
 
-requests.post(WEBHOOK, json={"embeds": [embed]})
+requests.post(
+    WEBHOOK,
+    json={"embeds": [embed]}
+)
 
 print("DONE")
